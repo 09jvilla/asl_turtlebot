@@ -2,8 +2,12 @@
   <rosparam param="sim">false</rosparam>
   <rosparam param="map">true</rosparam>
   
-  <node pkg="asl_turtlebot" type="pose_controller.py" name="turtlebot_pose_controller" />
-  <node pkg="asl_turtlebot" type="cmd_pose_commander.py" name="cmd_pose_commander" />
+  <include file="$(find asl_turtlebot_project)/launch/velodyne_filter.launch">
+  </include>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/project_sim.rviz"/>
+  <node pkg="asl_turtlebot_project" type="pose_controller.py" name="turtlebot_pose_controller" />
+  <node pkg="asl_turtlebot_project" type="cmd_pose_commander.py" name="cmd_pose_commander" />
+  <node pkg="asl_turtlebot_project" type="puddle_viz.py" name="puddle_visualization" />
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot_project)/rviz/project_sim.rviz"/>
 </launch>
