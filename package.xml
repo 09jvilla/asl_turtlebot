@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>asl_turtlebot</name>
+  <name>asl_turtlebot_project</name>
   <version>0.0.0</version>
-  <description>The asl_turtlebot package</description>
+  <description>The asl_turtlebot package for our group project.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
