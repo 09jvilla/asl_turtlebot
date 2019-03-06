@@ -64,6 +64,7 @@ class Supervisor:
         self.pose_goal_publisher = rospy.Publisher('/cmd_pose', Pose2D, queue_size=10)
         # command vel (used for idling)
         self.cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.food_list = [] 
 
         # subscribers
         # stop sign detector
@@ -76,9 +77,15 @@ class Supervisor:
         # if using rviz, we can subscribe to nav goal click
         if rviz:
             rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
+            
+        # puddle detector
+        rospy.Subscriber('/coords_puddle', Pose2D, self.food_detected_callback )
         
-        rospy.Subscriber('/coords_puddle', Pose2D, self.current_puddle_coords_callback )
-    
+        # food detector
+        # TODO: come up with way to subscribe to all types of food - coco_labels.txt
+        #       banana, apple, sandwich, orange, broccoli, carrot, hot dog, pizza, donut, cake
+        rospy.Subscriber('/detector/pizza', DetectedObject, self.stop_sign_detected_callback)
+        
     def gazebo_callback(self, msg):
         pose = msg.pose[msg.name.index("turtlebot3_burger")]
         twist = msg.twist[msg.name.index("turtlebot3_burger")]
@@ -101,6 +108,27 @@ class Supervisor:
         if self.pud_dist < 0.5:
             print("stopping for puddle!")
             self.mode = Mode.IDLE
+            
+    def food_detected_callback(self, msg):
+        """ callback for detected food object from mobilenet """ 
+        name = msg.name
+        if name not in self.food_list:
+            self.food_list.append(name)
+        
+        confidence = msg.confidence
+        dist = bject_msg.distance
+        thetaleft = object_msg.thetaleft = thetaleft
+        thetaright = object_msg.thetaright
+        
+        theta = (thetaleft + thetaright) / 2.0
+        
+        ''' TODO: - Convert dist & theta into world coordinate
+                     - may be this can be handled in EKF model - Similar to SLAM algo?
+                  - initialize location estimate if not seen before
+                  - update estimate based on confidence & measurements?
+                  - store value for when we need to go retrieve it
+                  
+        '''
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
