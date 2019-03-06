@@ -4,7 +4,7 @@ import numpy as np
 import tf
 import tf.msg
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
-from geometry_msgs.msg import PointStamped, Point
+from geometry_msgs.msg import PointStamped, Point, Pose2D
 from visualization_msgs.msg import Marker
 
 # look up doc.
@@ -60,6 +60,7 @@ class PuddleViz:
         self.tf_listener = tf.TransformListener()
         self.puddle_mean = None
         self.puddle_viz_pub = rospy.Publisher("/viz/puddle", Marker, queue_size=10)
+        self.puddle_coords_pub = rospy.Publisher("/coords_puddle", Pose2D, queue_size=10)
         self.puddle_marker = initialize_puddle_marker()
         rospy.Subscriber("/velodyne_puddle_filter", PointCloud2, self.velodyne_callback)
 
@@ -126,7 +127,14 @@ class PuddleViz:
                                                        self.puddle_time,
                                                        "/puddle",
                                                        "/map")
-                
+
+                # create a message for puddle coordinates and publish
+                self.puddle_coords_msg = Pose2D()
+                self.puddle_coords_msg.x = puddle_map_pt.point.x
+                self.puddle_coords_msg.y = puddle_map_pt.point.y
+                self.puddle_coords_msg.theta = 0.0
+                self.puddle_coords_pub.publish(puddle_coords_msg)
+
                 # make puddle marker
                 ellipse_points = compute_ellipse_points(0.2, 0.2)
                 self.puddle_marker.points = []
@@ -134,6 +142,7 @@ class PuddleViz:
                     # print("drawing ellipse")
                     self.puddle_marker.points.append(Point(ellipse_points[0,i], ellipse_points[1,i], 0)) 
                 self.puddle_viz_pub.publish(self.puddle_marker)
+
 
             except:
                 pass
