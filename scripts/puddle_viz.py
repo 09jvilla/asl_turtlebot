@@ -31,7 +31,7 @@ Although this "works", it is not perfect and it can be significantly improved.
 '''
 
 # min number of points to be considered a puddle 
-MIN_POINTS = 3
+MIN_POINTS = 30
 
 # look ahead distance to search for puddles
 RHO = 1.5
@@ -129,11 +129,13 @@ class PuddleViz:
                                                        "/map")
 
                 # create a message for puddle coordinates and publish
+                
                 self.puddle_coords_msg = Pose2D()
                 self.puddle_coords_msg.x = puddle_map_pt.point.x
                 self.puddle_coords_msg.y = puddle_map_pt.point.y
                 self.puddle_coords_msg.theta = 0.0
-                self.puddle_coords_pub.publish(puddle_coords_msg)
+                self.puddle_coords_pub.publish(self.puddle_coords_msg)
+    
 
                 # make puddle marker
                 ellipse_points = compute_ellipse_points(0.2, 0.2)
