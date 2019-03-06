@@ -7,6 +7,9 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from geometry_msgs.msg import PointStamped, Point, Pose2D
 from visualization_msgs.msg import Marker
 
+import pcl
+
+
 # look up doc.
 import sensor_msgs.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2
@@ -77,6 +80,8 @@ class PuddleViz:
         y_coords = np.zeros(num_points)
         z_coords = np.zeros(num_points)
         i = 0
+
+        #pc_list = []
         # looping through the point cloud
         for p in lidar_info:
 
@@ -84,6 +89,28 @@ class PuddleViz:
             y_coords[i] = p[1]
             z_coords[i] = p[2]
             i += 1
+
+            #pc_list.append( [p[0],p[1],p[2]] )
+        
+        """
+        p = pcl.PointCloud()
+        p.from_list(pc_list)
+
+        seg = p.make_segmenter()
+
+        seg.set_model_type(pcl.SACMODEL_PLANE)
+        seg.set_distance_threshold(0.001)
+        seg.set_method_type(pcl.SAC_RANSAC)
+
+        indices, model = seg.segment()
+
+        extracted_cloud = p.extract(indices, negative=True)
+        pcl.save(extracted_cloud, "our_extracted_cloud.pcd")
+
+        print("Segmented model")
+        print(indices)
+        print(model)
+        """
 
         pt_ranges = np.hypot(x_coords, y_coords)
         pt_angles = np.arctan2(y_coords, x_coords)
