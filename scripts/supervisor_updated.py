@@ -8,6 +8,7 @@ from asl_turtlebot.msg import DetectedObject
 import tf
 import math
 from enum import Enum
+import numpy as np
 
 # if sim is True/using gazebo, therefore want to subscribe to /gazebo/model_states\
 # otherwise, they will use a TF lookup (hw2+)
@@ -76,6 +77,8 @@ class Supervisor:
         if rviz:
             rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
         
+        rospy.Subscriber('/coords_puddle', Pose2D, self.current_puddle_coords_callback )
+    
     def gazebo_callback(self, msg):
         pose = msg.pose[msg.name.index("turtlebot3_burger")]
         twist = msg.twist[msg.name.index("turtlebot3_burger")]
@@ -88,6 +91,16 @@ class Supervisor:
                     pose.orientation.w)
         euler = tf.transformations.euler_from_quaternion(quaternion)
         self.theta = euler[2]
+
+    def current_puddle_coords_callback(self,msg):
+        self.pud_x = msg.x
+        self.pud_y = msg.y
+
+        self.pud_dist = np.hypot(self.pud_x, self.pud_y)
+
+        if self.pud_dist < 0.5:
+            print("stopping for puddle!")
+            self.mode = Mode.IDLE
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """

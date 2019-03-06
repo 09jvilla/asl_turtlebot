@@ -7,6 +7,9 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from geometry_msgs.msg import PointStamped, Point, Pose2D
 from visualization_msgs.msg import Marker
 
+import pcl
+
+
 # look up doc.
 import sensor_msgs.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2
@@ -31,7 +34,7 @@ Although this "works", it is not perfect and it can be significantly improved.
 '''
 
 # min number of points to be considered a puddle 
-MIN_POINTS = 3
+MIN_POINTS = 30
 
 # look ahead distance to search for puddles
 RHO = 1.5
@@ -77,6 +80,8 @@ class PuddleViz:
         y_coords = np.zeros(num_points)
         z_coords = np.zeros(num_points)
         i = 0
+
+        #pc_list = []
         # looping through the point cloud
         for p in lidar_info:
 
@@ -84,6 +89,28 @@ class PuddleViz:
             y_coords[i] = p[1]
             z_coords[i] = p[2]
             i += 1
+
+            #pc_list.append( [p[0],p[1],p[2]] )
+        
+        """
+        p = pcl.PointCloud()
+        p.from_list(pc_list)
+
+        seg = p.make_segmenter()
+
+        seg.set_model_type(pcl.SACMODEL_PLANE)
+        seg.set_distance_threshold(0.001)
+        seg.set_method_type(pcl.SAC_RANSAC)
+
+        indices, model = seg.segment()
+
+        extracted_cloud = p.extract(indices, negative=True)
+        pcl.save(extracted_cloud, "our_extracted_cloud.pcd")
+
+        print("Segmented model")
+        print(indices)
+        print(model)
+        """
 
         pt_ranges = np.hypot(x_coords, y_coords)
         pt_angles = np.arctan2(y_coords, x_coords)
@@ -129,11 +156,13 @@ class PuddleViz:
                                                        "/map")
 
                 # create a message for puddle coordinates and publish
+                
                 self.puddle_coords_msg = Pose2D()
                 self.puddle_coords_msg.x = puddle_map_pt.point.x
                 self.puddle_coords_msg.y = puddle_map_pt.point.y
                 self.puddle_coords_msg.theta = 0.0
-                self.puddle_coords_pub.publish(puddle_coords_msg)
+                self.puddle_coords_pub.publish(self.puddle_coords_msg)
+    
 
                 # make puddle marker
                 ellipse_points = compute_ellipse_points(0.2, 0.2)
