@@ -77,14 +77,24 @@ class Supervisor:
         # if using rviz, we can subscribe to nav goal click
         if rviz:
             rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
-            
+        
+	#rospy.Subscriber('/map', nav_msgs/OccupancyGrid, self.map_callback)
         # puddle detector
-        rospy.Subscriber('/coords_puddle', Pose2D, self.food_detected_callback )
+        rospy.Subscriber('/coords_puddle', Pose2D, self.stop_sign_detected_callback )
         
         # food detector
         # TODO: come up with way to subscribe to all types of food - coco_labels.txt
         #       banana, apple, sandwich, orange, broccoli, carrot, hot dog, pizza, donut, cake
-        rospy.Subscriber('/detector/pizza', DetectedObject, self.stop_sign_detected_callback)
+        rospy.Subscriber('/detector/pizza', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/banana', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/apple', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/sandwich', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/orange', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/broccoli', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/carrot', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/hot dog', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/donut', DetectedObject, self.food_detected_callback)
+        rospy.Subscriber('/detector/cake', DetectedObject, self.food_detected_callback)
         
     def gazebo_callback(self, msg):
         pose = msg.pose[msg.name.index("turtlebot3_burger")]
@@ -99,6 +109,7 @@ class Supervisor:
         euler = tf.transformations.euler_from_quaternion(quaternion)
         self.theta = euler[2]
 
+
     def current_puddle_coords_callback(self,msg):
         self.pud_x = msg.x
         self.pud_y = msg.y
@@ -111,17 +122,40 @@ class Supervisor:
             
     def food_detected_callback(self, msg):
         """ callback for detected food object from mobilenet """ 
-        name = msg.name
-        if name not in self.food_list:
-            self.food_list.append(name)
+        #name = msg.name
+        #if name not in self.food_list:
+        #    self.food_list.append(name)
         
-        confidence = msg.confidence
-        dist = bject_msg.distance
-        thetaleft = object_msg.thetaleft = thetaleft
-        thetaright = object_msg.thetaright
-        
-        theta = (thetaleft + thetaright) / 2.0
-        
+        #confidence = msg.confidence
+        #dist = msg.distance
+        #thetaleft = msg.thetaleft
+        #thetaright = msg.thetaright
+        #theta = (thetaleft + thetaright) / 2.0
+	position,angle = self.trans_listener.lookupTransform("map", "base_link", rospy.Time(0)) #check for node names
+	self.x = position[0]
+        self.y = position[1]
+        euler = tf.transformations.euler_from_quaternion(angle)
+        self.theta = euler[2]
+	theta = (msg.thetaleft + msg.thetaright)/2
+	object_x = self.x + msg.distance * np.cos(theta)
+	object_y = self.y + msg.distance * np.sin(theta)
+	object_pose = np.array([object_x, object_y])
+	object_list  = [msg.name, confidence, object_pose]
+	# If first item in list, add
+	if (len(self.food_list) == 0):
+		self.food_list.append(object_list)
+	#ELSE
+	for i in range(len(self.food_list)):
+		#If it has same name and if it is close to an existing an element
+		if (self.food_list[i][0] == object_list[0]) and (np.linalg.norm(self.food_list[i][2] - object_pose[2]) < 0.5):
+			if (self.food_list[i][1] < object_list[1]):
+				self.food_list[i] = object_list #Higher Confidence estimate, update
+				break
+		else: #Not close to the existing list, hence append
+			self.food_list.append(object_list)
+
+	#current_list = [msg.name, msg.confidence, self.x, self.y, self.theta, msg.distance, msg.thetaleft,msg.thetaright]
+        #self.food_list.append(current_list)
         ''' TODO: - Convert dist & theta into world coordinate
                      - may be this can be handled in EKF model - Similar to SLAM algo?
                   - initialize location estimate if not seen before
