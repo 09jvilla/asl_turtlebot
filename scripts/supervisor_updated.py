@@ -43,6 +43,7 @@ class Mode(Enum):
     CROSS = 4
     NAV = 5
     MANUAL = 6
+    DELIVERY = 7
 
 
 print "supervisor settings:\n"
@@ -186,8 +187,8 @@ class Supervisor:
         just_food = message.split("\"")[1]
         items = just_food.split(",")
 
-        print("Printing Items List:")
-        print(items)
+        if self.basket:
+            return
 
         for target in items:
             flag = 0
@@ -197,21 +198,15 @@ class Supervisor:
                     #self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1) 
                     flag = 1
                     #consider just looking for one instance
+                    goal = (food[2][0], food[2][1], 0.1)
+                    self.basket.append([target,goal])
                     break
             if flag == 0:
                 print("Your order of " + target + " is out of stock.")
 
-        # REF:# object_list  = [msg.name, msg.confidence, object_pose]       
-        
-        """
-        for item in items:
-            if item not in self.food_dict:
-                print("Your order of ", item, "is out of stock")
-            else:
-                _, goal = self.food_dict[item]
-                print(item, 'at location: ', goal)#for debugging
-                self.cmd_nav_publisher.publish(goal) #put this somewhere else'''
-        """
+        ##Add home position last
+        self.basket.append(["HOME", (0,0,0)])
+        return
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
@@ -266,6 +261,11 @@ class Supervisor:
         pose_g_msg.theta = self.theta_g
 
         self.pose_goal_publisher.publish(pose_g_msg)
+
+    def update_goal_from_food(self,food_pos):
+        self.x_g = food_pos[0]
+        self.y_g = food_pos[1]
+        self.theta_g = food_pos[2]
 
     def nav_to_pose(self):
         """ sends the current desired pose to the naviagtor """
@@ -342,8 +342,17 @@ class Supervisor:
 
         # checks wich mode it is in and acts accordingly
         if self.mode == Mode.IDLE:
-            # send zero velocity
-            self.stay_idle()
+            if self.basket:
+                print("Current state of basket: ")
+                print(self.basket)
+                
+                first_item = self.basket.pop(0)
+                item_name, item_position = first_item
+                print("Going to go pick up " + str(item_name))
+                self.update_goal_from_food(item_position)
+                self.mode = Mode.NAV
+            else:
+                self.stay_idle()
 
         elif self.mode == Mode.POSE:
             # moving towards a desired pose
