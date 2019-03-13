@@ -179,17 +179,27 @@ class Supervisor:
 
     def food_order_callback(self, msg):
         message= str(msg)
-        items = message.split()
+        
+        print("My incoming string:")
+        print(message)
+        
+        just_food = message.split("\"")[1]
+        items = just_food.split(",")
+
+        print("Printing Items List:")
+        print(items)
 
         for target in items:
             flag = 0
             for food in self.food_list:
-                if food[0] == target.replace('"',''):
-                    print(target.replace('"',''), 'at location', food[2])
-                    self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1) 
+                if food[0] == target:
+                    print("Found " + target + " at location " + str(food[2]))
+                    #self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1) 
                     flag = 1
+                    #consider just looking for one instance
+                    break
             if flag == 0:
-                print("Your order of ", target.replace('"',''), "is out of stock")
+                print("Your order of " + target + " is out of stock.")
 
         # REF:# object_list  = [msg.name, msg.confidence, object_pose]       
         
@@ -265,7 +275,8 @@ class Supervisor:
         nav_g_msg.y = self.y_g
         nav_g_msg.theta = self.theta_g
 
-        self.pose_goal_publisher.publish(nav_g_msg)
+        ##JEV: this publishes to what will be read by navigator
+        self.cmd_nav_publisher.publish(nav_g_msg)
 
     def stay_idle(self):
         """ sends zero velocity to stay put """

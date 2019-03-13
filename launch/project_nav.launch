@@ -4,8 +4,6 @@
   <rosparam param="rviz">false</rosparam>
   
   <node pkg="asl_turtlebot_project" type="navigator.py" name="turtlebot_navigator" />
-  <node pkg="asl_turtlebot_project" type="pose_controller.py" name="turtlebot_pose_controller" />
-  <!--node pkg="asl_turtlebot_project" type="cmd_nav_commander.py" name="cmd_nav_commander" /-->
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot_project)/rviz/project_sim.rviz"/>
 </launch>
