@@ -9,6 +9,7 @@ import tf
 import math
 from enum import Enum
 import numpy as np
+# import Collections.defaultdict
 
 # if sim is True/using gazebo, therefore want to subscribe to /gazebo/model_states\
 # otherwise, they will use a TF lookup (hw2+)
@@ -64,7 +65,15 @@ class Supervisor:
         self.pose_goal_publisher = rospy.Publisher('/cmd_pose', Pose2D, queue_size=10)
         # command vel (used for idling)
         self.cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.food_list = [] 
+        self.cmd_nav_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
+        #list of food items observed during the initial exploration stage.
+        #format: [[msg.name1, msg.confidence1, object_pose1], [msg.name2, msg.confidence2, object_pose2], ....]
+        self.food_list = []
+        #faster, more efficient iteration of food_list above in a dictionary format.
+        self.food_dict= dict()
+        #list of food items with [(item, goal)]. Example: [(apple, (1,1)), (orange, (2,2))]
+        #All items
+        self.basket = []
 
         # subscribers
         # stop sign detector
@@ -77,11 +86,15 @@ class Supervisor:
         # if using rviz, we can subscribe to nav goal click
         if rviz:
             rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
-        
+
 	#rospy.Subscriber('/map', nav_msgs/OccupancyGrid, self.map_callback)
         # puddle detector
-        rospy.Subscriber('/coords_puddle', Pose2D, self.stop_sign_detected_callback )
-        
+        rospy.Subscriber('/coords_puddle', Pose2D, self.current_puddle_coords_callback )
+
+        #food subscriber
+        #take an order from the command line
+        rospy.Subscriber('/delivery_request', String, self.food_order_callback)
+
         # food detector
         # TODO: come up with way to subscribe to all types of food - coco_labels.txt
         #       banana, apple, sandwich, orange, broccoli, carrot, hot dog, pizza, donut, cake
@@ -95,7 +108,7 @@ class Supervisor:
         rospy.Subscriber('/detector/hot_dog', DetectedObject, self.food_detected_callback)
         rospy.Subscriber('/detector/donut', DetectedObject, self.food_detected_callback)
         rospy.Subscriber('/detector/cake', DetectedObject, self.food_detected_callback)
-        
+
     def gazebo_callback(self, msg):
         pose = msg.pose[msg.name.index("turtlebot3_burger")]
         twist = msg.twist[msg.name.index("turtlebot3_burger")]
@@ -119,13 +132,13 @@ class Supervisor:
         if self.pud_dist < 0.5:
             print("stopping for puddle!")
             self.mode = Mode.IDLE
-            
+
     def food_detected_callback(self, msg):
-        """ callback for detected food object from mobilenet """ 
+        """ callback for detected food object from mobilenet """
         #name = msg.name
         #if name not in self.food_list:
         #    self.food_list.append(name)
-        
+
         #confidence = msg.confidence
         #dist = msg.distance
         #thetaleft = msg.thetaleft
@@ -141,10 +154,12 @@ class Supervisor:
 	object_y = self.y + msg.distance * np.sin(theta)
 	object_pose = np.array([object_x, object_y])
 	object_list  = [msg.name, msg.confidence, object_pose]
+	self.food_dict.update({msg.name: [msg.confidence, object_pose]})
+
 	# If first item in list, add
-	if (len(self.food_list) == 0):
+	if len(self.food_list) == 0:
 		self.food_list.append(object_list)
-	
+
 	#ELSE
 	for i in range(len(self.food_list)):
 		#If it has same name and if it is close to an existing an element
@@ -164,15 +179,29 @@ class Supervisor:
                   - initialize location estimate if not seen before
                   - update estimate based on confidence & measurements?
                   - store value for when we need to go retrieve it
-                  
+
         '''
+    def food_order_callback(self, msg):
+        message= str(msg)
+        items = message.split(',')
+        print(items)
+        # REF:# object_list  = [msg.name, msg.confidence, object_pose]
+        for item in items:
+            if item not in self.food_dict:
+                print("Your order of ", item, "is out of stock")
+            else:
+                _, goal = self.food_dict[item]
+                print(item, 'at location: ', goal)#for debugging
+                self.cmd_nav_publisher.publish(goal) #put this somewhere else
+
+
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
         origin_frame = "/map" if mapping else "/odom"
         print("rviz command received!")
         try:
-            
+
             nav_pose_origin = self.trans_listener.transformPose(origin_frame, msg)
             self.x_g = nav_pose_origin.pose.position.x
             self.y_g = nav_pose_origin.pose.position.y
@@ -199,14 +228,14 @@ class Supervisor:
 
         # distance of the stop sign
         dist = msg.distance
-    
+
         # if close enough and in nav mode, stop
         if dist > 0 and dist < STOP_MIN_DIST and self.mode == Mode.NAV:
             self.init_stop_sign()
 
 
     ############ your code starts here ############
-    # feel free to change the code here 
+    # feel free to change the code here
     # you may or may not find these functions useful
     # there is no "one answer"
 
@@ -235,7 +264,7 @@ class Supervisor:
         """ sends zero velocity to stay put """
 
         vel_g_msg = Twist()
-        
+
         self.cmd_vel_publisher.publish(vel_g_msg)
 
     def close_to(self,x,y,theta):
@@ -247,7 +276,7 @@ class Supervisor:
         """ initiates a stop sign maneuver """
         self.stop_sign_start = rospy.get_rostime()
         self.mode = Mode.STOP
-            
+
     def has_stopped(self):
         """ checks if stop sign maneuver is over """
 
