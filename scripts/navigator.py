@@ -135,18 +135,21 @@ class Navigator:
 
         # makes sure we have a location
         try:
-            (translation,rotation) = self.trans_listener.lookupTransform('/map', '/velodyne', rospy.Time(0))
+            # (translation,rotation) = self.trans_listener.lookupTransform('/map', '/velodyne', rospy.Time(0))
+            (translation,rotation) = self.trans_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
             self.x = translation[0]
             self.y = translation[1]
             euler = tf.transformations.euler_from_quaternion(rotation)
             self.theta = euler[2]
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             self.current_plan = []
+            print('exit..failed tf')
             return
 
         # makes sure we have a map
         if not self.occupancy:
             self.current_plan = []
+            print('no occupancy')
             return
 
         # if close to the goal, use the pose_controller instead
@@ -159,6 +162,7 @@ class Navigator:
             self.nav_pose_pub.publish(pose_g_msg)
             self.current_plan = []
             self.V_prev = 0
+            print('use pose conroller')
             return
 
         # if there is no plan, we are far from the start of the plan,
@@ -171,7 +175,7 @@ class Navigator:
             x_init = self.snap_to_grid((self.x, self.y))
             x_goal = self.snap_to_grid((self.x_g, self.y_g))
             problem = AStar(state_min,state_max,x_init,x_goal,self.occupancy,self.plan_resolution)
-        
+
             #print(self.x,self.x_g)
 
             rospy.loginfo("Navigator: Computing navigation plan")
@@ -220,12 +224,16 @@ class Navigator:
                     # plt.show()
                 else:
                     rospy.logwarn("Navigator: Path too short, not updating")
+                    print("Navigator: Path too short, not updating")
             else:
                 rospy.logwarn("Navigator: Could not find path")
+                print("Navigator: Could not find path")
                 self.current_plan = []
+        print('current plan:', self.current_plan)
 
         # if we have a path, execute it (we need at least 3 points for this controller)
         if len(self.current_plan) > 3:
+            print('executing plan....')
 
             # if currently not moving, first line up with the plan
             if self.V_prev == 0:

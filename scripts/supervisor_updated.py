@@ -43,7 +43,6 @@ class Mode(Enum):
     CROSS = 4
     NAV = 5
     MANUAL = 6
-    DELIVERY = 7
 
 
 print "supervisor settings:\n"
@@ -69,7 +68,8 @@ class Supervisor:
         self.cmd_nav_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
         #list of food items observed during the initial exploration stage.
         #format: [[msg.name1, msg.confidence1, object_pose1], [msg.name2, msg.confidence2, object_pose2], ....]
-        self.food_list = []
+        # self.food_list = []
+        self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] #use for debug
         #faster, more efficient iteration of food_list above in a dictionary format.
         self.food_dict= dict()
         #list of food items with [(item, goal)]. Example: [(apple, (1,1)), (orange, (2,2))]
@@ -123,7 +123,6 @@ class Supervisor:
         euler = tf.transformations.euler_from_quaternion(quaternion)
         self.theta = euler[2]
 
-
     def current_puddle_coords_callback(self,msg):
         self.pud_x = msg.x
         self.pud_y = msg.y
@@ -145,13 +144,13 @@ class Supervisor:
         #thetaleft = msg.thetaleft
         #thetaright = msg.thetaright
         #theta = (thetaleft + thetaright) / 2.0
-        
+
         position,angle = self.trans_listener.lookupTransform("/map", "/velodyne", rospy.Time(0)) #check for node names
         self.x = position[0]
         self.y = position[1]
         euler = tf.transformations.euler_from_quaternion(angle)
         self.theta = euler[2]
-        
+
         theta = (msg.thetaleft + msg.thetaright)/2
         object_x = self.x + 0 * np.cos(theta)
         object_y = self.y + 0 * np.sin(theta)
@@ -170,20 +169,20 @@ class Supervisor:
                 if (self.food_list[i][1] < object_list[1]):
                     self.food_list.remove(self.food_list[i])
                     self.food_list.append(object_list) #Higher Confidence estimate, update
-                    
+
                     break
             else: #Not close to the existing list, hence append
                 self.food_list.append(object_list)
-    
+
         print(self.food_list[0:3])
         print(msg.distance,object_x)
 
     def food_order_callback(self, msg):
         message= str(msg)
-        
-        print("My incoming string:")
-        print(message)
-        
+
+        # print("My incoming string:")
+        # print(message)
+
         just_food = message.split("\"")[1]
         items = just_food.split(",")
 
@@ -195,7 +194,7 @@ class Supervisor:
             for food in self.food_list:
                 if food[0] == target:
                     print("Found " + target + " at location " + str(food[2]))
-                    #self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1) 
+                    #self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1)
                     flag = 1
                     #consider just looking for one instance
                     goal = (food[2][0], food[2][1], 0.1)
@@ -213,7 +212,6 @@ class Supervisor:
         origin_frame = "/map" if mapping else "/odom"
         print("rviz command received!")
         try:
-
             nav_pose_origin = self.trans_listener.transformPose(origin_frame, msg)
             self.x_g = nav_pose_origin.pose.position.x
             self.y_g = nav_pose_origin.pose.position.y
@@ -326,6 +324,8 @@ class Supervisor:
                 (translation,rotation) = self.trans_listener.lookupTransform(origin_frame, '/base_footprint', rospy.Time(0))
                 self.x = translation[0]
                 self.y = translation[1]
+
+                # print('position: ', self.x, ',',  self.y)
                 euler = tf.transformations.euler_from_quaternion(rotation)
                 self.theta = euler[2]
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -345,7 +345,7 @@ class Supervisor:
             if self.basket:
                 print("Current state of basket: ")
                 print(self.basket)
-                
+
                 first_item = self.basket.pop(0)
                 item_name, item_position = first_item
                 print("Going to go pick up " + str(item_name))
