@@ -155,7 +155,7 @@ class Supervisor:
 				break
 		else: #Not close to the existing list, hence append
 			self.food_list.append(object_list)
-	print(self.food_list)
+	print(self.food_list,msg.distance)
 	#current_list = [msg.name, msg.confidence, self.x, self.y, self.theta, msg.distance, msg.thetaleft,msg.thetaright]
         #self.food_list.append(current_list)
         ''' TODO: - Convert dist & theta into world coordinate
