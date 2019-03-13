@@ -148,14 +148,15 @@ class Supervisor:
 	#ELSE
 	for i in range(len(self.food_list)):
 		#If it has same name and if it is close to an existing an element
-		if (self.food_list[i][0] == object_list[0]) and (np.linalg.norm(self.food_list[i][2] - object_list[2]) < 0.5):
+		if (self.food_list[i][0] == object_list[0]) and (np.linalg.norm(self.food_list[i][2] - object_list[2]) < 1):
 			if (self.food_list[i][1] < object_list[1]):
 				self.food_list.remove(self.food_list[i])
 				self.food_list.append(object_list) #Higher Confidence estimate, update
 				break
 		else: #Not close to the existing list, hence append
 			self.food_list.append(object_list)
-	print(self.food_list,msg.distance)
+	print(self.food_list)
+	print(msg.distance)
 	#current_list = [msg.name, msg.confidence, self.x, self.y, self.theta, msg.distance, msg.thetaleft,msg.thetaright]
         #self.food_list.append(current_list)
         ''' TODO: - Convert dist & theta into world coordinate
