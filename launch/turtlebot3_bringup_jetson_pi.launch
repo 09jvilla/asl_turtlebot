@@ -27,7 +27,7 @@
         <param name="odom_frame" value="odom"/>
         <param name="map_update_interval" value="2.0"/>
         <param name="maxUrange" value="4.0"/>
-        <param name="minimumScore" value="100"/>
+        <param name="minimumScore" value="0"/>
         <param name="linearUpdate" value="0.2"/>
         <param name="angularUpdate" value="0.2"/>
         <param name="temporalUpdate" value="0.5"/>

@@ -95,7 +95,9 @@ class Navigator:
         self.x_g = data.x
         self.y_g = data.y
         self.theta_g = data.theta
-        self.run_navigator()
+	if not self.close_to_end_location():
+	    print(self.x,self.x_g)
+            self.run_navigator()
 
     def map_md_callback(self, msg):
         self.map_width = msg.width
@@ -133,7 +135,7 @@ class Navigator:
 
         # makes sure we have a location
         try:
-            (translation,rotation) = self.trans_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
+            (translation,rotation) = self.trans_listener.lookupTransform('/map', '/velodyne', rospy.Time(0))
             self.x = translation[0]
             self.y = translation[1]
             euler = tf.transformations.euler_from_quaternion(rotation)
@@ -169,6 +171,7 @@ class Navigator:
             x_init = self.snap_to_grid((self.x, self.y))
             x_goal = self.snap_to_grid((self.x_g, self.y_g))
             problem = AStar(state_min,state_max,x_init,x_goal,self.occupancy,self.plan_resolution)
+	    print(self.x,self.x_g)
 
             rospy.loginfo("Navigator: Computing navigation plan")
             if problem.solve():
