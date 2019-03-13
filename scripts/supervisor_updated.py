@@ -24,7 +24,7 @@ mapping = rospy.get_param("map")
 
 # threshold at which we consider the robot at a location
 POS_EPS = .1
-THETA_EPS = .3
+THETA_EPS = 3.14159
 
 # time to stop at a stop sign
 STOP_TIME = 3
@@ -68,8 +68,8 @@ class Supervisor:
         self.cmd_nav_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
         #list of food items observed during the initial exploration stage.
         #format: [[msg.name1, msg.confidence1, object_pose1], [msg.name2, msg.confidence2, object_pose2], ....]
-        # self.food_list = []
-        self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] #use for debug
+        self.food_list = []
+        #self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] #use for debug
         #faster, more efficient iteration of food_list above in a dictionary format.
         self.food_dict= dict()
         #list of food items with [(item, goal)]. Example: [(apple, (1,1)), (orange, (2,2))]
