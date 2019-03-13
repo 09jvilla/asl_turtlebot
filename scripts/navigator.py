@@ -95,8 +95,8 @@ class Navigator:
         self.x_g = data.x
         self.y_g = data.y
         self.theta_g = data.theta
-	if not self.close_to_end_location():
-	    print(self.x,self.x_g)
+        if not self.close_to_end_location():
+           print(self.x,self.x_g)
             self.run_navigator()
 
     def map_md_callback(self, msg):
@@ -171,7 +171,7 @@ class Navigator:
             x_init = self.snap_to_grid((self.x, self.y))
             x_goal = self.snap_to_grid((self.x_g, self.y_g))
             problem = AStar(state_min,state_max,x_init,x_goal,self.occupancy,self.plan_resolution)
-	    print(self.x,self.x_g)
+        print(self.x,self.x_g)
 
             rospy.loginfo("Navigator: Computing navigation plan")
             if problem.solve():

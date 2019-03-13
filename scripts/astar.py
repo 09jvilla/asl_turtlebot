@@ -40,7 +40,7 @@ class AStar(object):
             if x[dim] >= self.statespace_hi[dim]:
                 return False
         if not self.occupancy.is_free(x):
-            return True
+            return False
         return True
 
     # computes the euclidean distance between two states

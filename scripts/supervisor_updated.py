@@ -87,7 +87,7 @@ class Supervisor:
         if rviz:
             rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
 
-	#rospy.Subscriber('/map', nav_msgs/OccupancyGrid, self.map_callback)
+    #rospy.Subscriber('/map', nav_msgs/OccupancyGrid, self.map_callback)
         # puddle detector
         rospy.Subscriber('/coords_puddle', Pose2D, self.current_puddle_coords_callback )
 
@@ -144,69 +144,64 @@ class Supervisor:
         #thetaleft = msg.thetaleft
         #thetaright = msg.thetaright
         #theta = (thetaleft + thetaright) / 2.0
-	position,angle = self.trans_listener.lookupTransform("/map", "/velodyne", rospy.Time(0)) #check for node names
-	self.x = position[0]
+        
+        position,angle = self.trans_listener.lookupTransform("/map", "/velodyne", rospy.Time(0)) #check for node names
+        self.x = position[0]
         self.y = position[1]
         euler = tf.transformations.euler_from_quaternion(angle)
         self.theta = euler[2]
-	theta = (msg.thetaleft + msg.thetaright)/2
-	object_x = self.x + 0 * np.cos(theta)
-	object_y = self.y + 0 * np.sin(theta)
-	object_pose = np.array([object_x, object_y])
-	object_list  = [msg.name, msg.confidence, object_pose]
-	#self.food_dict.update({msg.name: [msg.confidence, object_pose]})
+        
+        theta = (msg.thetaleft + msg.thetaright)/2
+        object_x = self.x + 0 * np.cos(theta)
+        object_y = self.y + 0 * np.sin(theta)
+        object_pose = np.array([object_x, object_y])
+        object_list  = [msg.name, msg.confidence, object_pose]
 
-	# If first item in list, add
-	if len(self.food_list) == 0:
-		self.food_list.append(object_list)
 
-	#ELSE
-	for i in range(len(self.food_list)):
-		#If it has same name and if it is close to an existing an element
-		if (self.food_list[i][0] == object_list[0]) and (np.linalg.norm(self.food_list[i][2] - object_list[2]) < 5):
-			if (self.food_list[i][1] < object_list[1]):
-				self.food_list.remove(self.food_list[i])
-				self.food_list.append(object_list) #Higher Confidence estimate, update
-				
-				break
-		else: #Not close to the existing list, hence append
-			self.food_list.append(object_list)
-	
-	print(self.food_list[0:3])
-	print(msg.distance,object_x)
-	#current_list = [msg.name, msg.confidence, self.x, self.y, self.theta, msg.distance, msg.thetaleft,msg.thetaright]
-        #self.food_list.append(current_list)
-        ''' TODO: - Convert dist & theta into world coordinate
-                     - may be this can be handled in EKF model - Similar to SLAM algo?
-                  - initialize location estimate if not seen before
-                  - update estimate based on confidence & measurements?
-                  - store value for when we need to go retrieve it
+        # If first item in list, add
+        if len(self.food_list) == 0:
+            self.food_list.append(object_list)
 
-        '''
+        #ELSE
+        for i in range(len(self.food_list)):
+            #If it has same name and if it is close to an existing an element
+            if (self.food_list[i][0] == object_list[0]) and (np.linalg.norm(self.food_list[i][2] - object_list[2]) < 5):
+                if (self.food_list[i][1] < object_list[1]):
+                    self.food_list.remove(self.food_list[i])
+                    self.food_list.append(object_list) #Higher Confidence estimate, update
+                    
+                    break
+            else: #Not close to the existing list, hence append
+                self.food_list.append(object_list)
+    
+        print(self.food_list[0:3])
+        print(msg.distance,object_x)
+
     def food_order_callback(self, msg):
         message= str(msg)
         items = message.split()
-        print(items)
-	for target in items:
-    	    flag = 0
-    	    for food in self.food_list:
-		print(target.replace('"',''))
-        	if food[0] == target.replace('"',''):
-            	    print(target.replace('"',''), 'at location', food[2])
-		    #pose = [food[2][0],food[2][1],0]
-		    self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1) 
-            	    flag = 1
-    	    if flag == 0:
-		print("Your order of ", target.replace('"',''), "is out of stock")
-	
+
+        for target in items:
+            flag = 0
+            for food in self.food_list:
+                if food[0] == target.replace('"',''):
+                    print(target.replace('"',''), 'at location', food[2])
+                    self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1) 
+                    flag = 1
+            if flag == 0:
+                print("Your order of ", target.replace('"',''), "is out of stock")
+
         # REF:# object_list  = [msg.name, msg.confidence, object_pose]       
-	'''for item in items:
+        
+        """
+        for item in items:
             if item not in self.food_dict:
                 print("Your order of ", item, "is out of stock")
             else:
                 _, goal = self.food_dict[item]
                 print(item, 'at location: ', goal)#for debugging
                 self.cmd_nav_publisher.publish(goal) #put this somewhere else'''
+        """
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
