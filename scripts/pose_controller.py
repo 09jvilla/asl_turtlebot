@@ -14,6 +14,9 @@ K1 = 0.4
 K2 = 0.8
 K3 = 0.8
 
+POS_EPS = .1
+THETA_EPS = 3.14159/2.0
+
 # tells the robot to stay still
 # if it doesn't get messages within that time period
 TIMEOUT = np.inf
@@ -124,7 +127,8 @@ class PoseController:
             th_rot = self.theta-self.theta_g 
             rho = linalg.norm(rel_coords) 
 
-            if (rho < 0.03) & (th_rot < 0.08):
+            #if (rho < 0.03) & (th_rot < 0.08):
+            if (abs(self.x_g-self.x)<POS_EPS and abs(self.y_g-self.y)<POS_EPS and abs(self.theta-self.theta_g)<THETA_EPS):
                 rospy.loginfo("Close to goal: commanding zero controls")
                 self.x_g = None
                 self.y_g = None
