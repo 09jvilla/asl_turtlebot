@@ -67,6 +67,7 @@
   <!-- <node pkg="asl_turtlebot_project" type="cmd_nav_commander.py" name="cmd_nav_commander" /> -->
   <node pkg="asl_turtlebot_project" type="detector.py" name="turtlebot_detector" />
   <!-- <node pkg="asl_turtlebot_project" type="plotMarker.py" name="robot_and_goal_marker" /> -->
+  <node pkg="asl_turtlebot_project" type="marker_publisher.py" name="marker_publisher" />
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot_project)/rviz/project_sim.rviz"/>
 </launch>

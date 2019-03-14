@@ -3,9 +3,7 @@
     <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
 
     <!-- PU NAME OF YOUR PI HERE -->
-    <machine name="pi" address="<name of pi>.local" env-loader="~/catkin_ws/devel/env_pi.sh" user="aa274" password="aa274" />
-
-
+    <machine name="pi" address="chipotle.local" env-loader="~/catkin_ws/devel/env_pi.sh" user="aa274" password="aa274" />
 
     <node machine="pi" type="raspicam_node" pkg="raspicam_node" name="raspicam_node" output="screen">
 
@@ -20,14 +18,14 @@
         <param name="camera_frame_id" value="raspicam"/>
     </node>
 
-    <node pkg="asl_turtlebot_project" type="camera_relay.py" name="camera_relay"/>
+    <node pkg="asl_turtlebot" type="camera_relay.py" name="camera_relay"/>
 
     <node pkg="gmapping" type="slam_gmapping" name="turtlebot3_slam_gmapping" output="screen">
         <param name="base_frame" value="base_footprint"/>
         <param name="odom_frame" value="odom"/>
         <param name="map_update_interval" value="2.0"/>
         <param name="maxUrange" value="4.0"/>
-        <param name="minimumScore" value="0"/>
+        <param name="minimumScore" value="100"/>
         <param name="linearUpdate" value="0.2"/>
         <param name="angularUpdate" value="0.2"/>
         <param name="temporalUpdate" value="0.5"/>
@@ -56,7 +54,7 @@
         <param name="lasamplestep" value="0.005"/>
     </node>
 
-    <node pkg="asl_turtlebot_project" type="detector_mobilenet.py" name="turtlebot_detector" respawn="true"/>
+    <node pkg="asl_turtlebot" type="detector_mobilenet.py" name="turtlebot_detector" respawn="true"/>
 
     <!-- x: -180, y: -90 -->
     <node pkg="tf" type="static_transform_publisher" name="camera_true_broadcaster" args="0.03 0 0.067 0.707107 0 0.707107 0 base_footprint raspicam 100" />

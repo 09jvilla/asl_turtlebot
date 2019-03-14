@@ -4,7 +4,7 @@ import rospy
 from gazebo_msgs.msg import ModelStates
 from std_msgs.msg import Float32MultiArray, String
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
-from asl_turtlebot.msg import DetectedObject
+from asl_turtlebot_project.msg import DetectedObject, FoodLoc, FoodLocList
 import tf
 import math
 from enum import Enum
@@ -24,7 +24,7 @@ mapping = rospy.get_param("map")
 
 # threshold at which we consider the robot at a location
 POS_EPS = .1
-THETA_EPS = .3
+THETA_EPS = 3.14159
 
 # time to stop at a stop sign
 STOP_TIME = 3
@@ -66,10 +66,15 @@ class Supervisor:
         # command vel (used for idling)
         self.cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.cmd_nav_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
+        # publish detected food location
+        self.food_publisher = rospy.Publisher('/food_loc', FoodLocList, queue_size=10)
         #list of food items observed during the initial exploration stage.
         #format: [[msg.name1, msg.confidence1, object_pose1], [msg.name2, msg.confidence2, object_pose2], ....]
-        # self.food_list = []
-        self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] #use for debug
+        self.food_list = []
+        #========================== DEBUG ONLY ==========================
+        self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] 
+        #========================== DEBUG ONLY ==========================
+        
         #faster, more efficient iteration of food_list above in a dictionary format.
         self.food_dict= dict()
         #list of food items with [(item, goal)]. Example: [(apple, (1,1)), (orange, (2,2))]
@@ -176,10 +181,26 @@ class Supervisor:
 
         print(self.food_list[0:3])
         print(msg.distance,object_x)
+        
+        
 
     def food_order_callback(self, msg):
         message= str(msg)
-
+    
+        #========================== DEBUG ONLY ==========================
+        # TODO: move this to food_detected_callback
+        # Publish new food list 
+        food_list_msg = FoodLocList()
+        for item in self.food_list:
+            food_loc_msg = FoodLoc()
+            food_loc_msg.x = item[2][0]
+            food_loc_msg.y = item[2][1]
+            food_loc_msg.name = item[0]
+            food_list_msg.ob_msgs.append(food_loc_msg)
+        self.food_publisher.publish(food_list_msg)
+        # end TODO: ------------------------------
+        #========================== DEBUG ONLY ==========================
+        
         # print("My incoming string:")
         # print(message)
 
