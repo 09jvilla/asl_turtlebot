@@ -49,6 +49,8 @@ add_message_files(
  FILES
  DetectedObject.msg
  DetectedObjectList.msg
+ FoodLoc.msg
+ FoodLocList.msg
 )
 
 ## Generate services in the 'srv' folder

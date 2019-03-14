@@ -1,0 +1,143 @@
+#!/usr/bin/env python
+
+import rospy
+import tf
+from visualization_msgs.msg import Marker, MarkerArray
+from geometry_msgs.msg import Pose2D, PoseStamped
+from asl_turtlebot_project.msg import FoodLoc, FoodLocList
+
+class Visualizer:
+    
+    def __init__(self):
+        rospy.init_node('marker_publisher', anonymous=True)
+        # current state
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+
+        # goal state
+        self.x_g = 0.0
+        self.y_g = 0.0
+        self.theta_g = 0.0
+        
+        # food location listener
+        self.food_loc = []
+
+        # tf listener
+        self.trans_listener = tf.TransformListener()
+        
+        # subscribe to cmd_post
+        rospy.Subscriber('/cmd_pose', Pose2D, self.cmd_pose_callback)
+        
+        # subscribe to food_loc
+        rospy.Subscriber('/food_loc', FoodLocList, self.food_callback)
+        
+        # publishers
+        topic = 'visualization_marker'
+        self.publisher = rospy.Publisher(topic, Marker, queue_size=10)
+        topic_goal = 'goal_marker'
+        self.publisher_goal = rospy.Publisher(topic_goal, Marker, queue_size=10)
+        topic_food = 'food_marker_array'
+        self.publisher_food = rospy.Publisher(topic_food, MarkerArray, queue_size=10)
+
+    def cmd_pose_callback(self, msg):
+        self.x_g = msg.x
+        self.y_g = msg.y
+        self.theta_g = msg.theta  
+    
+    def food_callback(self, msg):
+        print("Got food message!")
+        self.food_loc = msg.ob_msgs
+    
+    def create_pose_marker(self):
+        marker = Marker(type=Marker.CYLINDER, id=0, lifetime=rospy.Duration())
+        try:
+            origin_frame = "/map"
+            (translation,rotation) = self.trans_listener.lookupTransform(origin_frame, 
+                                                                    '/base_footprint', 
+                                                                    rospy.Time(0))
+            self.x = translation[0]
+            self.y = translation[1]
+            euler = tf.transformations.euler_from_quaternion(rotation)
+            self.theta = euler[2]
+            
+            marker.pose.orientation.w = self.theta
+            marker.pose.position.x = self.x
+            marker.pose.position.y = self.y
+            marker.pose.position.z = 0.0
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            pass
+        marker.header.frame_id = '/map'
+        marker.header.stamp = rospy.Time(0)
+        marker.scale.x = 0.15
+        marker.scale.y = 0.15
+        marker.scale.z = 0.3
+        marker.color.r = 0.0
+        marker.color.b = 1.0
+        marker.color.g = 0.0
+        marker.color.a = 0.8
+        return marker
+        
+    def create_goal_marker(self):
+        # Create goal marker_publisher
+        goal_marker = Marker(type=Marker.CYLINDER, id=0, lifetime=rospy.Duration())
+        goal_marker.pose.orientation.w = self.theta_g
+        goal_marker.pose.position.x = self.x_g
+        goal_marker.pose.position.y = self.y_g
+        goal_marker.pose.position.z = 0.0
+        goal_marker.header.frame_id = '/map'
+        goal_marker.header.stamp = rospy.Time(0)
+        goal_marker.scale.x = 0.15
+        goal_marker.scale.y = 0.15
+        goal_marker.scale.z = 0.3
+        goal_marker.color.r = 1.0
+        goal_marker.color.b = 0.0
+        goal_marker.color.g = 0.0
+        goal_marker.color.a = 0.8
+        return goal_marker
+        
+    def create_food_marker(self):
+        markerArray = MarkerArray()
+        foodId = 0
+        for item in self.food_loc:
+            #print("Adding marker for ", item.name)
+            marker = Marker(type=Marker.SPHERE, id=foodId, lifetime=rospy.Duration())
+            marker.header.frame_id = '/map'
+            marker.header.stamp = rospy.Time(0)
+            marker.action = marker.ADD
+            marker.scale.x = 0.1
+            marker.scale.y = 0.1
+            marker.scale.z = 0.1
+            marker.color.a = 1.0
+            marker.color.r = 1.0
+            marker.color.g = 0.6
+            marker.color.b = 0.0
+            marker.pose.orientation.w = 1.0
+            marker.pose.position.z = 0.0
+            marker.pose.position.x = item.x
+            marker.pose.position.y = item.y
+            markerArray.markers.append(marker)
+            foodId += 1
+        return markerArray
+            
+        
+    def run(self):
+        rate = rospy.Rate(10) # 10 Hz
+
+        # continuously publish marker 
+        while not rospy.is_shutdown():
+            
+            marker = self.create_pose_marker()
+            goal_marker = self.create_goal_marker()
+            food_marker_array = self.create_food_marker()
+            
+
+            self.publisher.publish(marker)
+            self.publisher_goal.publish(goal_marker)
+            self.publisher_food.publish(food_marker_array)
+
+            rate.sleep()
+            
+if __name__ == '__main__':
+    mrkr = Visualizer()
+    mrkr.run()
