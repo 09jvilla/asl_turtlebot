@@ -16,7 +16,8 @@ import numpy as np
 use_gazebo = rospy.get_param("sim")
 
 # how is nav_cmd being decided -- human manually setting it, or rviz
-rviz = rospy.get_param("rviz")
+#rviz = rospy.get_param("rviz")
+rviz = True
 
 # if using gmapping, you will have a map frame. otherwise it will be odom frame
 mapping = rospy.get_param("map")

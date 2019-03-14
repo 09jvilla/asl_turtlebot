@@ -24,7 +24,7 @@ class AStar(object):
         self.open_set.append(x_init)
         self.g_score[x_init] = 0
         self.f_score[x_init] = self.distance(x_init,x_goal)
-	self.grid_check = 1
+        self.grid_check = 2
 
         self.path = None        # the final path as a list of states
 
