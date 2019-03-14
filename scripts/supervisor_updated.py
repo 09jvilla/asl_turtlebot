@@ -24,7 +24,7 @@ mapping = rospy.get_param("map")
 
 # threshold at which we consider the robot at a location
 POS_EPS = .1
-THETA_EPS = 3.14159
+THETA_EPS = 3.14159/2.0
 
 # time to stop at a stop sign
 STOP_TIME = 3
@@ -55,6 +55,7 @@ class Supervisor:
 
     def __init__(self):
         rospy.init_node('turtlebot_supervisor', anonymous=True)
+        self.basket_populated = False
         # initialize variables
         self.basket_filled = False
         self.x = 0
@@ -74,8 +75,12 @@ class Supervisor:
         #format: [[msg.name1, msg.confidence1, object_pose1], [msg.name2, msg.confidence2, object_pose2], ....]
         self.food_list = []
         #========================== DEBUG ONLY ==========================
+<<<<<<< HEAD
         # self.food_list = [ ['1', 1.0, (1,1)], ['2', .9, (2,2)], ['3', 0.9, (3,3)], \
         #                  ['4', 1.0, (4.44,4)], ['5', .9, (-2,-4)], ['6', 0.9, (5,5)]]
+=======
+        #self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] 
+>>>>>>> 80ae2445f998b9ab10c65204448b9dde162641d5
         #========================== DEBUG ONLY ==========================
 
         #faster, more efficient iteration of food_list above in a dictionary format.
@@ -208,7 +213,11 @@ class Supervisor:
         just_food = message.split("\"")[1]
         items = just_food.split(",")
 
+<<<<<<< HEAD
         if self.basket_filled == True:
+=======
+        if self.basket_populated:
+>>>>>>> 80ae2445f998b9ab10c65204448b9dde162641d5
             return
         basket_list = []
         for target in items:
@@ -229,11 +238,16 @@ class Supervisor:
             basket_list = self.traveling_salesman(basket_list)
 
         ##Add home position last
+<<<<<<< HEAD
         basket_list.append(["HOME", (0,0,0)])
         self.basket = basket_list
         self.basket_filled=True
         print('my basket', self.basket)
 
+=======
+        self.basket.append(["HOME", (0,0,0)])
+        self.basket_populated = True
+>>>>>>> 80ae2445f998b9ab10c65204448b9dde162641d5
         return
 
     def traveling_salesman(self,ls_to_travel):
