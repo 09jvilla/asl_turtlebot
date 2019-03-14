@@ -118,6 +118,22 @@ class Visualizer:
             marker.pose.position.y = item.y
             markerArray.markers.append(marker)
             foodId += 1
+            
+            text_marker = Marker(type=Marker.TEXT_VIEW_FACING, id=foodId, lifetime=rospy.Duration())
+            text_marker.header.frame_id = '/map'
+            text_marker.header.stamp = rospy.Time(0)
+            text_marker.action = text_marker.ADD
+            text_marker.text = item.name
+            text_marker.scale.z = 0.15
+            text_marker.color.a = 1.0
+            text_marker.color.r = 1.0
+            text_marker.color.g = 1.0
+            text_marker.color.b = 1.0
+            text_marker.pose.position.z = 0.0
+            text_marker.pose.position.x = item.x
+            text_marker.pose.position.y = item.y - 0.12
+            markerArray.markers.append(text_marker)
+            foodId += 1
         return markerArray
             
         
