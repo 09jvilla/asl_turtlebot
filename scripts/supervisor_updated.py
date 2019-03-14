@@ -6,7 +6,7 @@ from std_msgs.msg import Float32MultiArray, String
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
 from asl_turtlebot_project.msg import DetectedObject, FoodLoc, FoodLocList
 import tf
-import math
+import random, math, copy
 from enum import Enum
 import numpy as np
 # import Collections.defaultdict
@@ -32,6 +32,7 @@ STOP_TIME = 3
 # minimum distance from a stop sign to obey it
 STOP_MIN_DIST = .5
 
+TRAVEL_OPTIMAL = True
 # time taken to cross an intersection
 CROSSING_TIME = 3
 
@@ -55,6 +56,7 @@ class Supervisor:
     def __init__(self):
         rospy.init_node('turtlebot_supervisor', anonymous=True)
         # initialize variables
+        self.basket_filled = False
         self.x = 0
         self.y = 0
         self.theta = 0
@@ -72,9 +74,10 @@ class Supervisor:
         #format: [[msg.name1, msg.confidence1, object_pose1], [msg.name2, msg.confidence2, object_pose2], ....]
         self.food_list = []
         #========================== DEBUG ONLY ==========================
-        self.food_list = [ ['apple', 1.0, (3.44,2.0)], ['orange', .9, (3,1.0)], ['sandwich', 0.9, (3,0)] ] 
+        # self.food_list = [ ['1', 1.0, (1,1)], ['2', .9, (2,2)], ['3', 0.9, (3,3)], \
+        #                  ['4', 1.0, (4.44,4)], ['5', .9, (-2,-4)], ['6', 0.9, (5,5)]]
         #========================== DEBUG ONLY ==========================
-        
+
         #faster, more efficient iteration of food_list above in a dictionary format.
         self.food_dict= dict()
         #list of food items with [(item, goal)]. Example: [(apple, (1,1)), (orange, (2,2))]
@@ -181,52 +184,101 @@ class Supervisor:
 
         print(self.food_list[0:3])
         print(msg.distance,object_x)
-        
-        
 
     def food_order_callback(self, msg):
         message= str(msg)
-    
-        #========================== DEBUG ONLY ==========================
-        # TODO: move this to food_detected_callback
-        # Publish new food list 
-        food_list_msg = FoodLocList()
-        for item in self.food_list:
-            food_loc_msg = FoodLoc()
-            food_loc_msg.x = item[2][0]
-            food_loc_msg.y = item[2][1]
-            food_loc_msg.name = item[0]
-            food_list_msg.ob_msgs.append(food_loc_msg)
-        self.food_publisher.publish(food_list_msg)
-        # end TODO: ------------------------------
-        #========================== DEBUG ONLY ==========================
-        
+        #
+        # #========================== DEBUG ONLY ==========================
+        # # TODO: move this to food_detected_callback
+        # # Publish new food list
+        # food_list_msg = FoodLocList()
+        # for item in self.food_list:
+        #     food_loc_msg = FoodLoc()
+        #     food_loc_msg.x = item[2][0]
+        #     food_loc_msg.y = item[2][1]
+        #     food_loc_msg.name = item[0]
+        #     food_list_msg.ob_msgs.append(food_loc_msg)
+        # self.food_publisher.publish(food_list_msg)
+        # # end TODO: ------------------------------
+        # #========================== DEBUG ONLY ==========================
+
         # print("My incoming string:")
         # print(message)
 
         just_food = message.split("\"")[1]
         items = just_food.split(",")
 
-        if self.basket:
+        if self.basket_filled == True:
             return
-
+        basket_list = []
         for target in items:
             flag = 0
             for food in self.food_list:
                 if food[0] == target:
                     print("Found " + target + " at location " + str(food[2]))
-                    #self.cmd_nav_publisher.publish(food[2][0],food[2][1],0.1)
+
                     flag = 1
                     #consider just looking for one instance
                     goal = (food[2][0], food[2][1], 0.1)
-                    self.basket.append([target,goal])
+                    basket_list.append([target,goal])
                     break
             if flag == 0:
                 print("Your order of " + target + " is out of stock.")
 
+        if TRAVEL_OPTIMAL :
+            basket_list = self.traveling_salesman(basket_list)
+
         ##Add home position last
-        self.basket.append(["HOME", (0,0,0)])
+        basket_list.append(["HOME", (0,0,0)])
+        self.basket = basket_list
+        self.basket_filled=True
+        print('my basket', self.basket)
+
         return
+
+    def traveling_salesman(self,ls_to_travel):
+        num_item = len(ls_to_travel)
+        #add home
+        # ls_to_travel = list(['home', (self.x, self.y,self.theta)])+ls_to_travel
+        #
+        cities = []
+        for i in range(len(ls_to_travel)):
+            cities.append(ls_to_travel[i][1][0:2])
+        print('prior: ', ls_to_travel)
+        # cities = [np.random.sample(range(100), 2) for x in range(num_item)]
+
+        xmin = min(pair[0] for pair in cities)
+        xmax = max(pair[0] for pair in cities)
+
+        ymin = min(pair[1] for pair in cities)
+        ymax = max(pair[1] for pair in cities)
+
+        def transform(pair):
+            x = pair[0]
+            y = pair[1]
+            return [(x-xmin)*100/(xmax - xmin), (y-ymin)*100/(ymax - ymin)]
+
+        cities = [ transform(b) for b in cities] #rescale
+        tour = random.sample(range(num_item),num_item)
+
+        for temperature in np.logspace(0,5,num=100000)[::-1]:
+            [i,j] = sorted(random.sample(range(num_item),2))
+            newTour =  tour[:i] + tour[j:j+1] +  tour[i+1:j] + tour[i:i+1] + tour[j+1:]
+            if math.exp( ( sum([ math.sqrt(sum([(cities[tour[(k+1) % num_item]][d] - cities[tour[k % num_item]][d])**2 for d in [0,1] ])) for k in [j,j-1,i,i-1]]) - sum([math.sqrt(sum([(cities[newTour[(k+1) % num_item]][d] \
+                        - cities[newTour[k % num_item]][d])**2 for d in [0,1] ])) for k in [j,j-1,i,i-1]])) / temperature) > random.random():
+                tour = copy.copy(newTour)
+
+        travel_order = tour
+        return_list = []
+        # print('travel_order',travel_order)
+        # print('ls_to_travel', ls_to_travel)
+        for idx in travel_order:
+            # print(idx)
+            return_list.append(ls_to_travel[idx])
+        print('sorted: ', return_list)
+        return return_list
+
+
 
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
