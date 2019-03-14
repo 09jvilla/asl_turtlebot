@@ -25,7 +25,6 @@ class AStar(object):
         self.g_score[x_init] = 0
         self.f_score[x_init] = self.distance(x_init,x_goal)
 	self.grid_check = 2
-
         self.path = None        # the final path as a list of states
 
     # Checks if a give state is free, meaning it is inside the bounds of the map and

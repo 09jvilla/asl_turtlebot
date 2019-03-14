@@ -16,7 +16,8 @@ import numpy as np
 use_gazebo = rospy.get_param("sim")
 
 # how is nav_cmd being decided -- human manually setting it, or rviz
-rviz = rospy.get_param("rviz")
+#rviz = rospy.get_param("rviz")
+rviz = True
 
 # if using gmapping, you will have a map frame. otherwise it will be odom frame
 mapping = rospy.get_param("map")
@@ -32,7 +33,7 @@ STOP_TIME = 3
 # minimum distance from a stop sign to obey it
 STOP_MIN_DIST = .5
 
-TRAVEL_OPTIMAL = True
+TRAVEL_OPTIMAL = False
 # time taken to cross an intersection
 CROSSING_TIME = 3
 
@@ -228,9 +229,10 @@ class Supervisor:
             basket_list = self.traveling_salesman(basket_list)'''
 
         ##Add home position last
+        self.basket = basket_list
         self.basket.append(["HOME", (0,0,0)])
         self.basket_populated = True
-        self.basket = basket_list
+        
         return
 
     '''def traveling_salesman(self,ls_to_travel):
