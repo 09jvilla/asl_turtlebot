@@ -141,8 +141,8 @@ class PoseController:
                 alpha = angs[0] 
                 delta = angs[1] 
 
-                V = 0#K1*rho*np.cos(alpha) 
-                om = 0.05#K2*alpha + K1*np.sinc(2*alpha/np.pi)*(alpha+K3*delta) 
+                V = K1*rho*np.cos(alpha) 
+                om = K2*alpha + K1*np.sinc(2*alpha/np.pi)*(alpha+K3*delta) 
 
                 # Apply saturation limits
                 cmd_x_dot = np.sign(V)*min(V_MAX, np.abs(V))
