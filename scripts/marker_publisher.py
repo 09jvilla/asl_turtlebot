@@ -42,11 +42,15 @@ class Visualizer:
         
         # publishers
         topic = 'visualization_marker'
-        self.publisher_stop_sign = rospy.Publisher(topic, MarkerArray, queue_size=10)
+        self.publisher = rospy.Publisher(topic, Marker, queue_size=10)
+
         topic_stop_sign = 'stop_sign_marker'
-        self.publisher = rospy.Publisher(topic_stop_sign, Marker, queue_size=10)
+        self.publisher_stop_sign = rospy.Publisher(topic_stop_sign, MarkerArray, queue_size=10)
+        
+        
         topic_goal = 'goal_marker'
         self.publisher_goal = rospy.Publisher(topic_goal, Marker, queue_size=10)
+
         topic_food = 'food_marker_array'
         self.publisher_food = rospy.Publisher(topic_food, MarkerArray, queue_size=10)
 
@@ -57,7 +61,7 @@ class Visualizer:
     
     def stop_sign_callback(self, msg):
         print("Found stop sign!")
-        stop_sign_marker = Marker(type=Marker.CYLINDER, id=0, lifetime=rospy.Duration())
+        marker = Marker(type=Marker.CYLINDER, id=0, lifetime=rospy.Duration())
         try:
             origin_frame = "/map"
             (translation,rotation) = self.trans_listener.lookupTransform(origin_frame, 
