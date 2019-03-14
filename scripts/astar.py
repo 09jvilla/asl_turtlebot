@@ -24,7 +24,7 @@ class AStar(object):
         self.open_set.append(x_init)
         self.g_score[x_init] = 0
         self.f_score[x_init] = self.distance(x_init,x_goal)
-	self.grid_check = 1
+	self.grid_check = 2
 
         self.path = None        # the final path as a list of states
 
@@ -190,7 +190,7 @@ x_init = (0,0)
 x_goal = (8,8)
 obstacles = [((6,6),(8,7)),((2,1),(4,2)),((2,4),(4,6)),((6,2),(8,4))]
 occupancy = DetOccupancyGrid2D(width, height, obstacles)
-'''
+
 # A large random example
 width = 101
 height = 101
@@ -216,4 +216,4 @@ if not astar.solve():
     print "No path found"
     exit(0)
 
-astar.plot_path()
+astar.plot_path()'''

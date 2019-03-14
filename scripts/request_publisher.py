@@ -16,7 +16,7 @@ class DeliveryRequestPublisher:
 
     def publish_request(self):
         #publish the request t times, once every s seconds
-        t = 10
+        t = 1
         s = 1.
         for i in range(t):
             self.request_publisher.publish(self.delivery_request)

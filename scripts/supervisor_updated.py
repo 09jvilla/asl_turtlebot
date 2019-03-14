@@ -182,8 +182,7 @@ class Supervisor:
             else: #Not close to the existing list, hence append
                 self.food_list.append(object_list)
 
-        print(self.food_list[0:3])
-        print(msg.distance,object_x)
+        print(self.food_list)
 
     def food_order_callback(self, msg):
         message= str(msg)
@@ -207,9 +206,9 @@ class Supervisor:
 
         just_food = message.split("\"")[1]
         items = just_food.split(",")
-
-        if self.basket_populated:
-            return
+	print(items)
+        #if self.basket_populated:
+            #return
         basket_list = []
         for target in items:
             flag = 0
@@ -225,8 +224,8 @@ class Supervisor:
             if flag == 0:
                 print("Your order of " + target + " is out of stock.")
 
-        if TRAVEL_OPTIMAL :
-            basket_list = self.traveling_salesman(basket_list)
+        '''if TRAVEL_OPTIMAL :
+            basket_list = self.traveling_salesman(basket_list)'''
 
         ##Add home position last
         self.basket.append(["HOME", (0,0,0)])
@@ -234,7 +233,7 @@ class Supervisor:
         self.basket = basket_list
         return
 
-    def traveling_salesman(self,ls_to_travel):
+    '''def traveling_salesman(self,ls_to_travel):
         num_item = len(ls_to_travel)
         #add home
         # ls_to_travel = list(['home', (self.x, self.y,self.theta)])+ls_to_travel
@@ -274,8 +273,7 @@ class Supervisor:
             # print(idx)
             return_list.append(ls_to_travel[idx])
         print('sorted: ', return_list)
-        return return_list
-
+        return return_list'''
 
 
     def rviz_goal_callback(self, msg):

@@ -15,17 +15,17 @@ K2 = 0.8
 K3 = 0.8
 
 POS_EPS = .1
-THETA_EPS = 3.14159/2.0
+THETA_EPS = 0.1
 
 # tells the robot to stay still
 # if it doesn't get messages within that time period
 TIMEOUT = np.inf
 
 # maximum velocity
-V_MAX = 0.2
+V_MAX = 0.1
 
 # maximim angular velocity
-W_MAX = 1
+W_MAX = 0.2
 
 # if sim is True/using gazebo, therefore want to subscribe to /gazebo/model_states\
 # otherwise, they will use a TF lookup (hw2+)
@@ -141,8 +141,8 @@ class PoseController:
                 alpha = angs[0] 
                 delta = angs[1] 
 
-                V = K1*rho*np.cos(alpha) 
-                om = K2*alpha + K1*np.sinc(2*alpha/np.pi)*(alpha+K3*delta) 
+                V = 0#K1*rho*np.cos(alpha) 
+                om = 0.05#K2*alpha + K1*np.sinc(2*alpha/np.pi)*(alpha+K3*delta) 
 
                 # Apply saturation limits
                 cmd_x_dot = np.sign(V)*min(V_MAX, np.abs(V))
