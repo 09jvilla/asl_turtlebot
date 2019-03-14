@@ -184,6 +184,16 @@ class Supervisor:
                 self.food_list.append(object_list)
 
         print(self.food_list)
+        
+        # Publish new food list
+        food_list_msg = FoodLocList()
+        for item in self.food_list:
+            food_loc_msg = FoodLoc()
+            food_loc_msg.x = item[2][0]
+            food_loc_msg.y = item[2][1]
+            food_loc_msg.name = item[0]
+            food_list_msg.ob_msgs.append(food_loc_msg)
+        self.food_publisher.publish(food_list_msg)
 
     def food_order_callback(self, msg):
         message= str(msg)
@@ -207,9 +217,9 @@ class Supervisor:
 
         just_food = message.split("\"")[1]
         items = just_food.split(",")
-	print(items)
-        #if self.basket_populated:
-            #return
+	    print(items)
+        if self.basket_populated:
+            continue
         basket_list = []
         for target in items:
             flag = 0
