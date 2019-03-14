@@ -33,7 +33,7 @@ STOP_TIME = 3
 # minimum distance from a stop sign to obey it
 STOP_MIN_DIST = .5
 
-TRAVEL_OPTIMAL = True
+TRAVEL_OPTIMAL = False
 # time taken to cross an intersection
 CROSSING_TIME = 3
 
@@ -211,6 +211,7 @@ class Supervisor:
 
         if self.basket_populated:
             return
+
         basket_list = []
         for target in items:
             flag = 0
@@ -226,13 +227,15 @@ class Supervisor:
             if flag == 0:
                 print("Your order of " + target + " is out of stock.")
 
+
         if TRAVEL_OPTIMAL :
             basket_list = self.traveling_salesman(basket_list)
 
         ##Add home position last
+        self.basket = basket_list
         self.basket.append(["HOME", (0,0,0)])
         self.basket_populated = True
-        self.basket = basket_list
+        
         return
 
     def traveling_salesman(self,ls_to_travel):
