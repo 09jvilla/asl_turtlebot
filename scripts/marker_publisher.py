@@ -4,7 +4,7 @@ import rospy
 import tf
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Pose2D, PoseStamped
-from asl_turtlebot_project.msg import FoodLoc, FoodLocList
+from asl_turtlebot_project.msg import FoodLoc, FoodLocList, DetectedObject
 
 class Visualizer:
     
@@ -22,15 +22,17 @@ class Visualizer:
         
         # food location listener
         self.food_loc = []
+        
+        self.stop_sign_marker = MarkerArray()
 
         # tf listener
         self.trans_listener = tf.TransformListener()
         
         #subscribe to stop sign detector
-        rospy.Subscriber('/detector/stop_sign', DetectedObject, self.stop_sign_detected_callback)
+        rospy.Subscriber('/detector/stop_sign', DetectedObject, self.stop_sign_callback)
 
         #subscribe to puddle detector
-        rospy.Subscriber('/coords_puddle', Pose2D, self.current_puddle_coords_callback )
+        #rospy.Subscriber('/coords_puddle', Pose2D, self.current_puddle_coords_callback )
 
         # subscribe to cmd_post
         rospy.Subscriber('/cmd_pose', Pose2D, self.cmd_pose_callback)
@@ -40,7 +42,7 @@ class Visualizer:
         
         # publishers
         topic = 'visualization_marker'
-        self.publisher_stop_sign = rospy.Publisher(topic, Marker, queue_size=10)
+        self.publisher_stop_sign = rospy.Publisher(topic, MarkerArray, queue_size=10)
         topic_stop_sign = 'stop_sign_marker'
         self.publisher = rospy.Publisher(topic_stop_sign, Marker, queue_size=10)
         topic_goal = 'goal_marker'
@@ -81,8 +83,9 @@ class Visualizer:
         marker.color.b = 1.0
         marker.color.g = 0.0
         marker.color.a = 0.8
+        self.stop_sign_marker.markers.append(marker)
 
-        text_marker = Marker(type=Marker.TEXT_VIEW_FACING, id=0, lifetime=rospy.Duration())
+        text_marker = Marker(type=Marker.TEXT_VIEW_FACING, id=1, lifetime=rospy.Duration())
         text_marker.header.frame_id = '/map'
         text_marker.header.stamp = rospy.Time(0)
         text_marker.action = text_marker.ADD
@@ -93,10 +96,9 @@ class Visualizer:
         text_marker.color.g = 1.0
         text_marker.color.b = 1.0
         text_marker.pose.position.z = 0.0
-        text_marker.pose.position.x = item.x
-        text_marker.pose.position.y = item.y - 0.12
-        markerArray.markers.append(text_marker)
-        return stop_sign_marker
+        text_marker.pose.position.x = self.x
+        text_marker.pose.position.y = self.y
+        self.stop_sign_marker.markers.append(text_marker)
 
     def food_callback(self, msg):
         print("Got food message!")
@@ -204,7 +206,7 @@ class Visualizer:
             self.publisher.publish(marker)
             self.publisher_goal.publish(goal_marker)
             self.publisher_food.publish(food_marker_array)
-            self.publisher_stop_sign.publish(
+            self.publisher_stop_sign.publish(self.stop_sign_marker)
 
             rate.sleep()
             
